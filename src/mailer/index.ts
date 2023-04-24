@@ -9,38 +9,35 @@ if (!SES_EMAIL_TO || !SES_EMAIL_FROM || !SES_REGION) {
   );
 }
 
-export type ContactDetails = {
+interface IEmail {
   email: string;
-};
+  target: string;
+}
 
 export async function main(event: SQSEvent): Promise<APIGatewayProxyResultV2> {
+  console.log(1);
   try {
     console.log("email payload", event);
+    console.log(2);
 
-    let messages = event.Records.map((record) => {
+    let payload = event.Records.map((record) => {
       const body = JSON.parse(record.body) as {
         Message: string;
       };
 
-      return { email: body.Message };
+      return body.Message;
     });
 
-    JSON.stringify(messages, null, 2);
+    let emailBody: IEmail = JSON.parse(payload[0]);
 
-    const { email } = messages[0] as ContactDetails;
+    if (!emailBody) throw new Error("Email and target are required required.");
 
-    console.log(email);
+    return await sendEmail(emailBody.email);
+  } catch (error: any) {
+    console.log(7);
 
-    if (!email) throw new Error("Email is required.");
+    console.log("7 error", error);
 
-    return await sendEmail({ email });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return JSON.stringify({
-        body: { error: error.message },
-        statusCode: 400,
-      });
-    }
     return JSON.stringify({
       body: { error: JSON.stringify(error) },
       statusCode: 400,
@@ -48,19 +45,24 @@ export async function main(event: SQSEvent): Promise<APIGatewayProxyResultV2> {
   }
 }
 
-async function sendEmail({
-  email,
-}: ContactDetails): Promise<APIGatewayProxyResultV2> {
-  const ses = new AWS.SES({ region: SES_REGION });
-  await ses.sendEmail(sendEmailParams({ email })).promise();
+async function sendEmail(email: string): Promise<APIGatewayProxyResultV2> {
+  try {
+    const ses = new AWS.SES({ region: SES_REGION });
+    await ses.sendEmail(sendEmailParams(email)).promise();
 
-  return JSON.stringify({
-    body: { message: "Email sent successfully" },
-    statusCode: 200,
-  });
+    console.log("email sent");
+
+    return JSON.stringify({
+      body: { message: "Email sent successfully" },
+      statusCode: 200,
+    });
+  } catch (e) {
+    console.log("email not sent", e);
+    throw new Error("Email not sent");
+  }
 }
 
-function sendEmailParams({ email }: ContactDetails) {
+function sendEmailParams(email: string) {
   return {
     Destination: {
       ToAddresses: [email],
@@ -69,11 +71,11 @@ function sendEmailParams({ email }: ContactDetails) {
       Body: {
         Html: {
           Charset: "UTF-8",
-          Data: getHtmlContent({ email }),
+          Data: getHtmlContent(email),
         },
         Text: {
           Charset: "UTF-8",
-          Data: getTextContent({ email }),
+          Data: getTextContent(email),
         },
       },
       Subject: {
@@ -85,10 +87,10 @@ function sendEmailParams({ email }: ContactDetails) {
   };
 }
 
-function getHtmlContent({ email }: ContactDetails) {
+function getHtmlContent(email: string) {
   return mailerTemplate();
 }
 
-function getTextContent({ email }: ContactDetails) {
+function getTextContent(email: string) {
   return mailerTemplate();
 }

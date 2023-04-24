@@ -34,15 +34,26 @@ export class AlertServiceStack extends cdk.Stack {
       entry: path.join(__dirname, "/../src/mailer/index.ts"),
     });
 
-    new NodejsFunction(this, "alertPublisherLambda", {
-      description: "alertPublisherLambda",
-      functionName: "alertPublisherLambda",
-      runtime: lambda.Runtime.NODEJS_16_X,
-      handler: "sendEmail",
-      memorySize: 1024,
-      timeout: Duration.seconds(300),
-      entry: path.join(__dirname, "/../src/mailer/publisher.ts"),
-    });
+    const alertPublisherLambda = new NodejsFunction(
+      this,
+      "alertPublisherLambda",
+      {
+        description: "alertPublisherLambda",
+        functionName: "alertPublisherLambda",
+        runtime: lambda.Runtime.NODEJS_16_X,
+        handler: "sendEmail",
+        memorySize: 1024,
+        timeout: Duration.seconds(300),
+        entry: path.join(__dirname, "/../src/mailer/publisher.ts"),
+      }
+    );
+
+    alertPublisherLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["sns:publish"],
+        resources: ["*"],
+      })
+    );
 
     alertLambda.addToRolePolicy(
       new iam.PolicyStatement({

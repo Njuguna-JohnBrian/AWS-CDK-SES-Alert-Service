@@ -170,8 +170,8 @@ export function mailerTemplate() {
                           align="left"
                         >
                           We notice that you have just created a Project on
-                          Procore!<br /><br />Unfortunatley the attached customer
-                          does not exist on Intacct and we would love for you to
+                          Procore!<br /><br />Unfortunately the attached customer
+                          does not exist on Intacct, and we would love for you to
                           go ahead and create them to ensure a faultless process.
                         </p>
                         <p

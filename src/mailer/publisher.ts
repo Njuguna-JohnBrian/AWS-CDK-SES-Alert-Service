@@ -8,12 +8,13 @@ export async function sendEmail(): Promise<void> {
     const payload = { target: "project", email: "njugunajb96@gmail.com" };
     await notification
       .publish({
-        TopicArn: cdk.Fn.importValue("alertTopicArn"),
+        TopicArn: "arn:aws:sns:us-east-1:329314673490:alertTopic",
         Message: JSON.stringify(payload, null, 2),
       })
       .promise();
     return;
   } catch (error) {
+    console.log(error);
     throw new Error(
       `Failed to publish message to Alert Topic. Throwing Error...`
     );
